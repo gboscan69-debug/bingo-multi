@@ -225,7 +225,7 @@
             display: flex; 
             width: 92%; 
             max-width: 500px; 
-            margin: 20px 0 12px 0; 
+            margin: 20px 0 6px 0; 
             background: rgba(15, 23, 42, 0.6); 
             border: 1px solid var(--border-glass);
             padding: 6px; 
@@ -249,6 +249,23 @@
             box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
         }
 
+        /* Selector de cantidad de cartones (Solo en sala privada) */
+        .view-limit-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-glass);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 11px;
+        }
+        .view-limit-btn.active {
+            background: var(--primary-neon);
+            color: #0f172a;
+            border-color: var(--primary-neon);
+        }
+
         /* Historial de Pelotas */
         .history-container {
             width: 92%;
@@ -258,7 +275,7 @@
             border: 1px solid var(--border-glass);
             border-radius: 20px;
             padding: 12px 16px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
         }
         .history-header {
@@ -296,59 +313,66 @@
         .history-ball-item.ball-o { background: linear-gradient(135deg, #f43f5e, #e11d48); }
         .history-ball-item.latest { transform: scale(1.1); border: 2px solid white; }
 
-        /* --- CARTONES MÁS PEQUEÑOS Y COMPACTOS --- */
+        /* --- CONTENEDOR ESTÁTICO DE CARTONES --- */
         .cards-container { 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
-            gap: 14px; 
+            gap: 8px; 
             width: 92%; 
-            max-width: 750px; 
-            padding: 10px 0; 
+            max-width: 650px; 
+            padding: 5px 0; 
+            justify-content: center;
+            align-content: center;
         }
+
+        /* Distribución estática según cantidad seleccionada */
+        .cards-container.count-1 { grid-template-columns: 1fr; max-width: 300px; }
+        .cards-container.count-2 { grid-template-columns: repeat(2, 1fr); max-width: 520px; }
+        .cards-container.count-3 { grid-template-columns: repeat(3, 1fr); max-width: 680px; }
+        .cards-container.count-4 { grid-template-columns: repeat(2, 1fr); max-width: 520px; }
 
         .bingo-card { 
             background: var(--surface-card); 
             backdrop-filter: blur(20px);
-            border-radius: 18px; 
-            padding: 12px; 
+            border-radius: 14px; 
+            padding: 8px; 
             border: 1px solid var(--border-glass); 
             display: flex; 
             flex-direction: column; 
             justify-content: space-between;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
         }
 
         .bingo-card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
             border-bottom: 1px solid rgba(255,255,255,0.06);
-            padding-bottom: 6px;
-            font-size: 12px;
+            padding-bottom: 3px;
+            font-size: 11px;
         }
 
         .bingo-header { 
             display: grid; 
             grid-template-columns: repeat(5, 1fr); 
-            gap: 4px; 
-            margin-bottom: 4px; 
+            gap: 3px; 
+            margin-bottom: 3px; 
         }
 
         .header-cell { 
             color: var(--primary-neon); 
             font-weight: 800; 
-            padding: 4px 0; 
-            font-size: 11px; 
+            padding: 2px 0; 
+            font-size: 10px; 
             text-align: center;
             background: rgba(14, 165, 233, 0.1);
-            border-radius: 6px;
+            border-radius: 4px;
         }
 
         .bingo-grid { 
             display: grid; 
             grid-template-columns: repeat(5, 1fr); 
-            gap: 4px; 
+            gap: 3px; 
         }
 
         .cell { 
@@ -356,10 +380,10 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            border-radius: 6px; 
+            border-radius: 4px; 
             border: 1px solid rgba(255, 255, 255, 0.04); 
             font-weight: 700; 
-            font-size: 11px; 
+            font-size: 10px; 
             background: rgba(255, 255, 255, 0.02); 
             color: var(--text-main); 
             cursor: pointer; 
@@ -374,18 +398,18 @@
         .cell.free { 
             background: linear-gradient(135deg, #f59e0b, #d97706); 
             color: #0f172a; 
-            font-size: 8px; 
+            font-size: 7px; 
             font-weight: 800;
         }
 
         .btn-buy, .btn-bingo { 
-            margin-top: 10px; 
+            margin-top: 6px; 
             border: none; 
-            padding: 8px; 
+            padding: 6px; 
             width: 100%; 
-            border-radius: 10px; 
+            border-radius: 8px; 
             font-weight: 800; 
-            font-size: 11px;
+            font-size: 10px;
             cursor: pointer; 
             color: white;
         }
@@ -395,14 +419,14 @@
 
         /* Chat Flotante */
         .chat-float-btn {
-            position: fixed; bottom: 80px; right: 20px;
+            position: fixed; bottom: 75px; right: 20px;
             background: linear-gradient(135deg, #0ea5e9, #6366f1);
             color: white; border: none; width: 45px; height: 45px;
             border-radius: 50%; cursor: pointer; display: flex;
             align-items: center; justify-content: center; font-size: 18px; z-index: 95;
         }
         .chat-window {
-            position: fixed; bottom: 140px; right: 20px; width: 300px; height: 360px;
+            position: fixed; bottom: 135px; right: 20px; width: 300px; height: 340px;
             background: var(--surface-card); border: 1px solid var(--border-glass);
             border-radius: 18px; display: none; flex-direction: column; z-index: 96; overflow: hidden;
         }
@@ -419,13 +443,13 @@
         .caller-bottom-bar { 
             position: fixed; bottom: 0; left: 0; right: 0; 
             background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(16px); 
-            padding: 10px 20px; z-index: 90; display: flex; align-items: center; justify-content: space-between; 
+            padding: 8px 20px; z-index: 90; display: flex; align-items: center; justify-content: space-between; 
             border-top: 1px solid var(--border-glass); 
         }
         .current-ball-mobile { 
-            width: 44px; height: 44px; line-height: 44px; border-radius: 50%; 
+            width: 40px; height: 40px; line-height: 40px; border-radius: 50%; 
             background: radial-gradient(circle at 30% 30%, #f43f5e, #9f1239); 
-            color: white; font-size: 15px; font-weight: 800; text-align: center; 
+            color: white; font-size: 14px; font-weight: 800; text-align: center; 
         }
         .empty-state { text-align: center; color: var(--text-muted); grid-column: 1 / -1; padding: 30px 0; font-size: 13px; }
     </style>
@@ -491,6 +515,15 @@
         <button class="tab-btn" id="tabPrivate" onclick="switchRoom('private')">🔒 Mis Cartones</button>
     </div>
 
+    <!-- Selector de cantidad de cartones (Solo visible en Mis Cartones) -->
+    <div id="viewLimitContainer" style="display: none; justify-content: center; gap: 6px; margin: 8px 0; font-size: 11px; color: var(--text-muted); align-items: center;">
+        <span>Ver en pantalla:</span>
+        <button onclick="changeCardsViewLimit(1)" class="view-limit-btn active" id="btnLimit1">1</button>
+        <button onclick="changeCardsViewLimit(2)" class="view-limit-btn" id="btnLimit2">2</button>
+        <button onclick="changeCardsViewLimit(3)" class="view-limit-btn" id="btnLimit3">3</button>
+        <button onclick="changeCardsViewLimit(4)" class="view-limit-btn" id="btnLimit4">4</button>
+    </div>
+
     <!-- Historial de Pelotas -->
     <div class="history-container">
         <div class="history-header">
@@ -522,7 +555,7 @@
     <div class="caller-bottom-bar">
         <div>
             <div style="font-size: 9px; color: var(--text-muted); font-weight: 800;">ESTADO</div>
-            <div id="lastBallText" style="font-weight: 700; font-size: 12px; color: var(--primary-neon);">Esperando partida...</div>
+            <div id="lastBallText" style="font-weight: 700; font-size: 11px; color: var(--primary-neon);">Esperando partida...</div>
         </div>
         <div class="current-ball-mobile" id="currentBallMini">--</div>
     </div>
@@ -537,6 +570,7 @@
         let userName = 'Jugador';
         let userAvatarBase64 = '';
         let generatedSecureCode = '';
+        let maxVisibleCards = 1;
         
         let diamonds = 100;
         let boughtCardsMap = {};
@@ -559,7 +593,6 @@
             localStorage.setItem('bingo_last_phone', userPhone);
         }
 
-        // Cargar datos automáticamente al iniciar la página por número guardado
         window.addEventListener('DOMContentLoaded', () => {
             const lastPhone = localStorage.getItem('bingo_last_phone');
 
@@ -582,19 +615,15 @@
             }
         });
 
-        // --- CERRAR SESIÓN SIN PERDER DATOS ---
         function logoutUser() {
             if (confirm("¿Estás seguro de que deseas cerrar sesión? Tus datos y cartones quedarán guardados en este dispositivo para cuando vuelvas a entrar.")) {
-                // Solo removemos el indicador de sesión actual, conservando el almacenamiento seguro del usuario
                 localStorage.removeItem('bingo_last_phone'); 
                 location.reload(); 
             }
         }
 
-        // --- VERIFICACIÓN DE ACCESO POR WHATSAPP ---
         function requestWhatsAppCode() {
             const phone = document.getElementById('authPhoneInput').value.trim();
-            
             if (!phone || phone.length < 10) {
                 alert("Por favor ingresa un número de WhatsApp válido con código de área.");
                 return;
@@ -623,7 +652,6 @@
                 return;
             }
 
-            // Comprobar si ya existen datos previos para este número
             const savedDataJson = localStorage.getItem(`bingo_data_${userPhone}`);
             if (savedDataJson) {
                 const data = JSON.parse(savedDataJson);
@@ -641,13 +669,11 @@
             }
             
             saveGameState();
-
             document.getElementById('authOverlay').style.display = 'none';
             updateProfileUI();
             updateUI();
         }
 
-        // --- GESTIÓN DE PERFIL ---
         function toggleProfileModal() {
             const modal = document.getElementById('profileModal');
             const isVisible = modal.style.display === 'flex';
@@ -678,9 +704,7 @@
         function saveProfileChanges() {
             const newName = document.getElementById('editNameInput').value.trim();
             if (newName) userName = newName;
-            
             saveGameState();
-
             updateProfileUI();
             toggleProfileModal();
         }
@@ -783,7 +807,20 @@
             currentRoom = room;
             document.getElementById('tabGeneral').classList.toggle('active', room === 'general');
             document.getElementById('tabPrivate').classList.toggle('active', room === 'private');
+            
+            const limitContainer = document.getElementById('viewLimitContainer');
+            if (limitContainer) {
+                limitContainer.style.display = (room === 'private') ? 'flex' : 'none';
+            }
             updateUI();
+        }
+
+        function changeCardsViewLimit(limit) {
+            maxVisibleCards = limit;
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`btnLimit${i}`).classList.toggle('active', i === limit);
+            }
+            renderCards();
         }
 
         function getSeededNumbers(min, max, count, seed) {
@@ -820,7 +857,6 @@
             if (diamonds < CARD_PRICE) { alert("Diamantes insuficientes."); return; }
             diamonds -= CARD_PRICE;
             boughtCardsMap[cardNumber] = { owner: userPhone, ownerName: userName };
-            
             saveGameState();
             switchRoom('private');
         }
@@ -829,7 +865,6 @@
             const key = `${cardNumber}_${row}_${col}`;
             if (markedCellsMap[key]) delete markedCellsMap[key];
             else markedCellsMap[key] = true;
-
             saveGameState();
             updateUI();
         }
@@ -854,7 +889,15 @@
             const app = document.getElementById('app');
             app.innerHTML = '';
             const container = document.createElement('div');
-            container.classList.add('cards-container');
+            
+            if (currentRoom === 'general') {
+                container.classList.add('cards-container');
+                container.style.gridTemplateColumns = 'repeat(auto-fit, minmax(200px, 1fr))';
+            } else {
+                container.classList.add('cards-container', `count-${maxVisibleCards}`);
+            }
+            
+            let renderedCount = 0;
             let visibleCount = 0;
 
             for (let i = 1; i <= 10; i++) {
@@ -866,6 +909,12 @@
                 if (currentRoom === 'private' && !isOwner) continue;
 
                 visibleCount++;
+                
+                if (currentRoom === 'private') {
+                    if (renderedCount >= maxVisibleCards) continue;
+                    renderedCount++;
+                }
+
                 const cardDiv = document.createElement('div');
                 cardDiv.classList.add('bingo-card');
 
@@ -920,7 +969,7 @@
             }
 
             if (visibleCount === 0) {
-                container.innerHTML = `<div class="empty-state">${currentRoom === 'general' ? 'No hay cartones disponibles.' : 'No tienes cartones comprados.'}</div>`;
+                container.innerHTML = `<div class="empty-state">${currentRoom === 'general' ? 'No hay cartones disponibles.' : 'No tienes cartones comprados. Ve a la Tienda a adquirir algunos.'}</div>`;
             }
             app.appendChild(container);
         }
