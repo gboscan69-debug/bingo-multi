@@ -7,76 +7,81 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Apunta correctamente a la carpeta public
 app.use(express.static(path.join(__dirname, 'public')));
 
 let gameState = {
     drawnBalls: [],
     gameRound: 1,
     gameStarted: false,
-    boughtCards: [] // Registro global de cartones comprados[cite: 1]
+    boughtCards: [] //[cite: 1] Registro global en memoria de cartones comprados
 };
 
 io.on('connection', (socket) => {
-    // Sincronizar estado actual al conectarse un nuevo jugador
+    // Sincronizar el estado global instantáneamente al conectar un cliente
     socket.emit('server_sync_state', { 
         drawnBalls: gameState.drawnBalls,
         gameStarted: gameState.gameStarted,
         boughtCards: gameState.boughtCards
     });
 
-    // Compra de cartones con bloqueo inmediato
+    // Gestión en tiempo real de la compra de cartones
     socket.on('buy_card', (data) => {
         const { cardId } = data;
         
-        // Validar si el juego ya inició
+        // Validar si el juego ya dio inicio para bloquear nuevas compras
         if (gameState.gameStarted) {
-            socket.emit('error_message', { message: 'No se pueden comprar cartones una vez iniciada la partida.' });
+            socket.emit('error_message', { message: 'La partida ya comenzó. No se pueden adquirir más cartones.' });
             return;
         }
 
-        // Validar si el cartón ya fue comprado
+        // Validación estricta global: verificar si el cartón ya fue comprado previamente
         if (gameState.boughtCards.includes(cardId)) {
-            socket.emit('error_message', { message: `El cartón #${cardId} ya no está disponible.` });
+            socket.emit('error_message', { message: `El cartón #${cardId} ya fue comprado por otro jugador y no está disponible.` });
             return;
         }
 
-        // Registrar y bloquear para todos
+        // Registrar la compra asociándola globalmente y bloqueándola al instante para todos
         gameState.boughtCards.push(cardId);
-        io.emit('server_card_bought', { boughtCards: gameState.boughtCards, cardId });
+
+        // Transmitir en tiempo real a todos los clientes conectados que el cartón fue comprado
+        io.emit('server_card_bought', { 
+            boughtCards: gameState.boughtCards, 
+            cardId, 
+            buyerId: socket.id 
+        });
     });
 
-    // Iniciar partida (ejemplo de control de administración)
+    // Iniciar la partida desde el panel de administración
     socket.on('admin_start_game', () => {
         gameState.gameStarted = true;
         io.emit('server_game_started', { gameStarted: true });
     });
 
+    // Transmisión en tiempo real de cada balota cantada
     socket.on('admin_draw_ball', (data) => {
         gameState.drawnBalls = data.drawnBalls;
         io.emit('server_ball_drawn', { drawnBalls: gameState.drawnBalls });
     });
 
-    // Procesar canto de bingo de forma segura en el servidor
+    // Procesar cantos de bingo en tiempo real de forma segura
     socket.on('player_claim_bingo', (data) => {
         const { cardId, markedNumbers } = data;
 
-        // Validar que el cartón pertenezca a los comprados
         if (!gameState.boughtCards.includes(cardId)) {
-            socket.emit('error_message', { message: 'Cartón no válido para reclamo.' });
+            socket.emit('error_message', { message: 'Este cartón no te pertenece o no es válido.' });
             return;
         }
 
-        // Validar que todas las balotas cantadas existan en los números marcados del cartón
         const isValid = markedNumbers.every(num => gameState.drawnBalls.includes(num));
 
         if (isValid) {
             io.emit('server_bingo_winner', { cardId, winner: socket.id });
         } else {
-            socket.emit('error_message', { message: 'El canto de bingo es inválido. Faltan balotas por salir.' });
+            socket.emit('error_message', { message: 'Canto de bingo inválido. Aún faltan balotas por salir.' });
         }
     });
 
+    // Reinicio total para la siguiente ronda en línea
     socket.on('admin_reset_game', () => {
         gameState.drawnBalls = [];
         gameState.gameStarted = false;
@@ -88,5 +93,5 @@ io.on('connection', (socket) => {
 
 const PORT = 3000;
 server.listen(PORT, () => {
-    console.log(`Servidor de Bingo activo en puerto ${PORT}`);
+    console.log(`Servidor de Bingo en línea activo en puerto ${PORT}`);
 });
