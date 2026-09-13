@@ -38,7 +38,6 @@
             min-height: 100vh; 
         }
 
-        /* Pantalla de Login Segura por WhatsApp */
         #authOverlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -105,7 +104,6 @@
         }
         .btn-auth:hover { filter: brightness(1.1); }
 
-        /* Barra Superior */
         .economy-bar { 
             background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(16px); 
@@ -182,7 +180,6 @@
         .user-name-display { font-size: 13px; font-weight: 800; color: var(--text-main); }
         .user-email-display { font-size: 10px; color: var(--text-muted); }
 
-        /* Modal de Edición de Perfil */
         #profileModal {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -249,7 +246,6 @@
             box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
         }
 
-        /* Selector de cantidad de cartones (Solo en sala privada) */
         .view-limit-btn {
             background: rgba(255,255,255,0.05);
             border: 1px solid var(--border-glass);
@@ -266,7 +262,6 @@
             border-color: var(--primary-neon);
         }
 
-        /* Historial de Pelotas */
         .history-container {
             width: 92%;
             max-width: 700px;
@@ -313,7 +308,6 @@
         .history-ball-item.ball-o { background: linear-gradient(135deg, #f43f5e, #e11d48); }
         .history-ball-item.latest { transform: scale(1.1); border: 2px solid white; }
 
-        /* --- CONTENEDOR ESTÁTICO DE CARTONES --- */
         .cards-container { 
             display: grid; 
             gap: 8px; 
@@ -324,7 +318,6 @@
             align-content: center;
         }
 
-        /* Distribución estática según cantidad seleccionada */
         .cards-container.count-1 { grid-template-columns: 1fr; max-width: 300px; }
         .cards-container.count-2 { grid-template-columns: repeat(2, 1fr); max-width: 520px; }
         .cards-container.count-3 { grid-template-columns: repeat(3, 1fr); max-width: 680px; }
@@ -417,7 +410,6 @@
         .btn-buy:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
         .btn-bingo { background: linear-gradient(135deg, #f43f5e, #be123c); }
 
-        /* Chat Flotante */
         .chat-float-btn {
             position: fixed; bottom: 75px; right: 20px;
             background: linear-gradient(135deg, #0ea5e9, #6366f1);
@@ -456,7 +448,6 @@
 </head>
 <body>
 
-    <!-- Pantalla de Login Segura por WhatsApp -->
     <div id="authOverlay">
         <div class="auth-card" id="authStep1Card">
             <h2>Acceso Seguro Bingo Pro</h2>
@@ -474,7 +465,6 @@
         </div>
     </div>
 
-    <!-- Modal para Editar Nombre, Avatar y Cerrar Sesión -->
     <div id="profileModal" onclick="if(event.target === this) toggleProfileModal()">
         <div class="profile-card">
             <h2 style="color: var(--primary-neon); font-size: 18px; margin-top:0;">Mi Perfil</h2>
@@ -492,7 +482,6 @@
         </div>
     </div>
 
-    <!-- Barra Superior -->
     <div class="economy-bar">
         <div class="badges-group">
             <div class="diamond-badge">💎 <span id="diamondCount">100</span></div>
@@ -511,11 +500,10 @@
     </div>
 
     <div class="room-nav">
-        <button class="tab-btn active" id="tabGeneral" onclick="switchRoom('general')">🏪 Tienda</button>
+        <button class="tab-btn active" id="tabGeneral" onclick="switchRoom('general')">🏪 Tienda de Cartones</button>
         <button class="tab-btn" id="tabPrivate" onclick="switchRoom('private')">🔒 Mis Cartones</button>
     </div>
 
-    <!-- Selector de cantidad de cartones (Solo visible en Mis Cartones) -->
     <div id="viewLimitContainer" style="display: none; justify-content: center; gap: 6px; margin: 8px 0; font-size: 11px; color: var(--text-muted); align-items: center;">
         <span>Ver en pantalla:</span>
         <button onclick="changeCardsViewLimit(1)" class="view-limit-btn active" id="btnLimit1">1</button>
@@ -524,7 +512,6 @@
         <button onclick="changeCardsViewLimit(4)" class="view-limit-btn" id="btnLimit4">4</button>
     </div>
 
-    <!-- Historial de Pelotas -->
     <div class="history-container">
         <div class="history-header">
             <span>HISTORIAL DE PELOTAS</span>
@@ -573,13 +560,12 @@
         let maxVisibleCards = 1;
         
         let diamonds = 100;
-        let boughtCardsMap = {};
+        let boughtCardsMap = {}; // Privado: solo se guarda localmente en tu dispositivo
         let markedCellsMap = {};
         let drawnBalls = [];
         let gameRound = 1;
         let soundEnabled = true;
 
-        // --- PERSISTENCIA LOCAL VINCULADA AL NÚMERO DE TELÉFONO ---
         function saveGameState() {
             if (!userPhone) return;
             const userData = {
@@ -616,7 +602,7 @@
         });
 
         function logoutUser() {
-            if (confirm("¿Estás seguro de que deseas cerrar sesión? Tus datos y cartones quedarán guardados en este dispositivo para cuando vuelvas a entrar.")) {
+            if (confirm("¿Estás seguro de que deseas cerrar sesión? Tus datos y cartones quedarán guardados en este dispositivo.")) {
                 localStorage.removeItem('bingo_last_phone'); 
                 location.reload(); 
             }
@@ -856,9 +842,11 @@
             if (drawnBalls.length > 0) { alert("Partida iniciada. No se puede comprar."); return; }
             if (diamonds < CARD_PRICE) { alert("Diamantes insuficientes."); return; }
             diamonds -= CARD_PRICE;
-            boughtCardsMap[cardNumber] = { owner: userPhone, ownerName: userName };
+            
+            // Se marca como comprado estrictamente de forma local y privada para ti
+            boughtCardsMap[cardNumber] = true; 
             saveGameState();
-            switchRoom('private');
+            updateUI();
         }
 
         function toggleCellMark(cardNumber, row, col) {
@@ -901,11 +889,10 @@
             let visibleCount = 0;
 
             for (let i = 1; i <= 10; i++) {
-                const cardInfo = boughtCardsMap[i];
-                const isPurchased = !!cardInfo;
-                const isOwner = isPurchased && cardInfo.owner === userPhone;
+                const isOwner = !!boughtCardsMap[i]; // Solo tú sabes si está en tu inventario local
 
-                if (currentRoom === 'general' && isPurchased) continue;
+                // En la tienda general se muestran todos del 1 al 10, pero si ya lo compraste se ve como adquirido por ti sin emitir alertas a los demás
+                // En Mis Cartones se muestran exclusivamente los que tú decidiste comprar de forma privada
                 if (currentRoom === 'private' && !isOwner) continue;
 
                 visibleCount++;
@@ -918,10 +905,17 @@
                 const cardDiv = document.createElement('div');
                 cardDiv.classList.add('bingo-card');
 
+                let statusText = 'Disponible';
+                let statusColor = '#38bdf8';
+                if (isOwner) {
+                    statusText = '✓ Comprado por ti';
+                    statusColor = '#10b981';
+                }
+
                 cardDiv.innerHTML = `
                     <div class="bingo-card-header">
                         <span style="font-weight: 800; color: #38bdf8;">Cartón #${i}</span>
-                        <span style="color: ${isOwner ? '#10b981' : '#64748b'};">${isOwner ? '✓ Tuyo' : 'Libre'}</span>
+                        <span style="color: ${statusColor}; font-weight: 700;">${statusText}</span>
                     </div>
                 `;
 
@@ -951,13 +945,19 @@
                 }
                 cardDiv.appendChild(grid);
 
-                if (!isPurchased && currentRoom === 'general') {
-                    const btnBuy = document.createElement('button');
-                    btnBuy.classList.add('btn-buy');
-                    btnBuy.disabled = drawnBalls.length > 0;
-                    btnBuy.innerText = drawnBalls.length > 0 ? 'Cerrado' : `Comprar (💎${CARD_PRICE})`;
-                    btnBuy.onclick = () => buyCard(i);
-                    cardDiv.appendChild(btnBuy);
+                if (currentRoom === 'general') {
+                    const btnAction = document.createElement('button');
+                    btnAction.classList.add('btn-buy');
+                    if (!isOwner) {
+                        btnAction.disabled = drawnBalls.length > 0;
+                        btnAction.innerText = drawnBalls.length > 0 ? 'Cerrado' : `Comprar (💎${CARD_PRICE})`;
+                        btnAction.onclick = () => buyCard(i);
+                    } else {
+                        btnAction.disabled = true;
+                        btnAction.style.background = '#065f46';
+                        btnAction.innerText = 'En tu inventario';
+                    }
+                    cardDiv.appendChild(btnAction);
                 } else if (isOwner) {
                     const btnBingo = document.createElement('button');
                     btnBingo.classList.add('btn-bingo');
@@ -969,7 +969,7 @@
             }
 
             if (visibleCount === 0) {
-                container.innerHTML = `<div class="empty-state">${currentRoom === 'general' ? 'No hay cartones disponibles.' : 'No tienes cartones comprados. Ve a la Tienda a adquirir algunos.'}</div>`;
+                container.innerHTML = `<div class="empty-state">${currentRoom === 'general' ? 'No hay cartones disponibles.' : 'No tienes cartones guardados en privado. Ve a la Tienda de Cartones para elegir los tuyos.'}</div>`;
             }
             app.appendChild(container);
         }
