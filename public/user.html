@@ -560,7 +560,7 @@
         let maxVisibleCards = 1;
         
         let diamonds = 100;
-        let boughtCardsMap = {}; // Privado: solo se guarda localmente en tu dispositivo
+        let boughtCardsMap = {}; 
         let markedCellsMap = {};
         let drawnBalls = [];
         let gameRound = 1;
@@ -843,7 +843,6 @@
             if (diamonds < CARD_PRICE) { alert("Diamantes insuficientes."); return; }
             diamonds -= CARD_PRICE;
             
-            // Se marca como comprado estrictamente de forma local y privada para ti
             boughtCardsMap[cardNumber] = true; 
             saveGameState();
             updateUI();
@@ -888,20 +887,24 @@
             let renderedCount = 0;
             let visibleCount = 0;
 
-            for (let i = 1; i <= 10; i++) {
-                const isOwner = !!boughtCardsMap[i]; // Solo tú sabes si está en tu inventario local
+            const ownedCardNumbers = Object.keys(boughtCardsMap).map(Number).sort((a, b) => a - b);
+            
+            let cardsToIterate = [];
+            if (currentRoom === 'general') {
+                for (let i = 1; i <= 10; i++) cardsToIterate.push(i);
+            } else {
+                cardsToIterate = ownedCardNumbers;
+            }
 
-                // En la tienda general se muestran todos del 1 al 10, pero si ya lo compraste se ve como adquirido por ti sin emitir alertas a los demás
-                // En Mis Cartones se muestran exclusivamente los que tú decidiste comprar de forma privada
-                if (currentRoom === 'private' && !isOwner) continue;
+            cardsToIterate.forEach(i => {
+                const isOwner = !!boughtCardsMap[i];
 
-                visibleCount++;
-                
                 if (currentRoom === 'private') {
-                    if (renderedCount >= maxVisibleCards) continue;
+                    if (renderedCount >= maxVisibleCards) return;
                     renderedCount++;
                 }
 
+                visibleCount++;
                 const cardDiv = document.createElement('div');
                 cardDiv.classList.add('bingo-card');
 
@@ -966,7 +969,7 @@
                     cardDiv.appendChild(btnBingo);
                 }
                 container.appendChild(cardDiv);
-            }
+            });
 
             if (visibleCount === 0) {
                 container.innerHTML = `<div class="empty-state">${currentRoom === 'general' ? 'No hay cartones disponibles.' : 'No tienes cartones guardados en privado. Ve a la Tienda de Cartones para elegir los tuyos.'}</div>`;
