@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casino Royale - Bingo Pro</title>
+    <script src="/socket.io/socket.io.js" onerror="window.socketFailed=true;"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
+        :root {
+            --bg-base: #090d16;
+            --surface-card: rgba(20, 27, 45, 0.85);
+            --surface-glass: rgba(30, 41, 59, 0.65);
+            --primary-neon: #0ea5e9;
+            --primary-glow: rgba(14, 165, 233, 0.3);
+            --accent-gold: #f59e0b;
+            --accent-pink: #f43f5e;
+            --success-neon: #10b981;
+            --text-main: #f8fafc;
+            --text-muted: #64748b;
+            --border-glass: rgba(255, 255, 255, 0.08);
+        }
+
+        * { box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        body { 
+            background-color: var(--bg-base); 
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(14, 165, 233, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(244, 63, 94, 0.06) 0%, transparent 40%);
+            color: var(--text-main); 
+            margin: 0; 
+            padding: 0 0 160px 0; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+
+        #authOverlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(9, 13, 22, 0.95);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .auth-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 24px;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+
+        .auth-card h2 {
+            margin-top: 0;
+            color: var(--primary-neon);
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+
+        .auth-card p {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-bottom: 24px;
+        }
+
+        .auth-input {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: white;
+            font-size: 14px;
+            margin-bottom: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+            text-align: center;
+        }
+        .auth-input:focus { border-color: var(--primary-neon); }
+
+        .btn-auth {
+            width: 100%;
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 800;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+            transition: filter 0.2s;
+        }
+        .btn-auth:hover { filter: brightness(1.1); }
+
+        .economy-bar { 
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px); 
+            border-bottom: 1px solid var(--border-glass);
+            padding: 14px 24px; 
+            width: 100%; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            position: sticky; 
+            top: 0; 
+            z-index: 90; 
+        }
+
+        .badges-group { display: flex; align-items: center; gap: 10px; }
+
+        .diamond-badge { 
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.15), rgba(56, 189, 248, 0.25)); 
+            border: 1px solid rgba(56, 189, 248, 0.4); 
+            padding: 8px 18px; 
+            border-radius: 30px; 
+            font-weight: 800; 
+            font-size: 14px; 
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .audio-toggle-badge {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            padding: 8px 14px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 13px;
+            color: #34d399;
+            cursor: pointer;
+        }
+        .audio-toggle-badge.muted {
+            background: rgba(244, 63, 94, 0.15);
+            border-color: rgba(244, 63, 94, 0.4);
+            color: #fb7185;
+        }
+
+        .user-profile-widget {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glass);
+            padding: 6px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+        }
+
+        .user-avatar-container {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 13px;
+            color: white;
+            border: 1px solid var(--primary-neon);
+        }
+        .user-avatar-container img { width: 100%; height: 100%; object-fit: cover; }
+
+        .user-meta { display: flex; flex-direction: column; text-align: left; }
+        .user-name-display { font-size: 13px; font-weight: 800; color: var(--text-main); }
+        .user-email-display { font-size: 10px; color: var(--text-muted); }
+
+        #profileModal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(9, 13, 22, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 1100;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .profile-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 24px;
+            padding: 26px;
+            width: 100%;
+            max-width: 360px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+
+        .avatar-upload-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 16px auto;
+            overflow: hidden;
+            border: 2px dashed var(--primary-neon);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: rgba(14, 165, 233, 0.05);
+        }
+        .avatar-upload-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+        .room-nav { 
+            display: flex; 
+            width: 92%; 
+            max-width: 500px; 
+            margin: 20px 0 6px 0; 
+            background: rgba(15, 23, 42, 0.6); 
+            border: 1px solid var(--border-glass);
+            padding: 6px; 
+            border-radius: 16px; 
+        }
+
+        .tab-btn { 
+            flex: 1; 
+            padding: 10px; 
+            border: none; 
+            background: transparent; 
+            color: var(--text-muted); 
+            font-weight: 700; 
+            font-size: 13px; 
+            border-radius: 12px; 
+            cursor: pointer; 
+        }
+        .tab-btn.active { 
+            background: linear-gradient(135deg, #0ea5e9, #6366f1); 
+            color: white;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+        }
+
+        .stats-banner {
+            width: 92%;
+            max-width: 650px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-glass);
+            border-radius: 14px;
+            padding: 10px 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            font-size: 12px;
+        }
+        .stat-item span { font-weight: 800; color: var(--primary-neon); }
+
+        .history-container {
+            width: 92%;
+            max-width: 700px;
+            background: var(--surface-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        .history-header {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .history-balls-scroll {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .history-ball-item {
+            min-width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #334155, #1e293b);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-main);
+            flex-shrink: 0;
+        }
+        .history-ball-item.ball-b { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+        .history-ball-item.ball-i { background: linear-gradient(135deg, #10b981, #059669); }
+        .history-ball-item.ball-n { background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; }
+        .history-ball-item.ball-g { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .history-ball-item.ball-o { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+        .history-ball-item.latest { transform: scale(1.1); border: 2px solid white; }
+
+        .cards-container { 
+            display: grid; 
+            gap: 8px; 
+            width: 92%; 
+            max-width: 650px; 
+            padding: 5px 0; 
+            justify-content: center;
+            align-content: center;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        .bingo-card { 
+            background: var(--surface-card); 
+            backdrop-filter: blur(20px);
+            border-radius: 14px; 
+            padding: 8px; 
+            border: 1px solid var(--border-glass); 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .bingo-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding-bottom: 3px;
+            font-size: 11px;
+        }
+
+        .bingo-header { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 3px; 
+            margin-bottom: 3px; 
+        }
+
+        .header-cell { 
+            color: var(--primary-neon); 
+            font-weight: 800; 
+            padding: 2px 0; 
+            font-size: 10px; 
+            text-align: center;
+            background: rgba(14, 165, 233, 0.1);
+            border-radius: 4px;
+        }
+
+        .bingo-grid { 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 3px; 
+        }
+
+        .cell { 
+            aspect-ratio: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-radius: 4px; 
+            border: 1px solid rgba(255, 255, 255, 0.04); 
+            font-weight: 700; 
+            font-size: 10px; 
+            background: rgba(255, 255, 255, 0.02); 
+            color: var(--text-main); 
+            cursor: pointer; 
+            user-select: none;
+        }
+        .cell:hover { background: rgba(255, 255, 255, 0.06); }
+        .cell.marked { 
+            background: linear-gradient(135deg, #10b981, #059669); 
+            color: white; 
+            font-weight: 800;
+        }
+        .cell.free { 
+            background: linear-gradient(135deg, #f59e0b, #d97706); 
+            color: #0f172a; 
+            font-size: 7px; 
+            font-weight: 800;
+        }
+
+        .btn-buy, .btn-bingo { 
+            margin-top: 6px; 
+            border: none; 
+            padding: 6px; 
+            width: 100%; 
+            border-radius: 8px; 
+            font-weight: 800; 
+            font-size: 10px;
+            cursor: pointer; 
+            color: white;
+        }
+        .btn-buy { background: linear-gradient(135deg, #f97316, #ea580c); }
+        .btn-buy:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+        .btn-bingo { background: linear-gradient(135deg, #f43f5e, #be123c); }
+
+        .chat-float-btn {
+            position: fixed; bottom: 75px; right: 20px;
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            color: white; border: none; width: 45px; height: 45px;
+            border-radius: 50%; cursor: pointer; display: flex;
+            align-items: center; justify-content: center; font-size: 18px; z-index: 95;
+        }
+        .chat-window {
+            position: fixed; bottom: 135px; right: 20px; width: 300px; height: 340px;
+            background: var(--surface-card); border: 1px solid var(--border-glass);
+            border-radius: 18px; display: none; flex-direction: column; z-index: 96; overflow: hidden;
+        }
+        .chat-window.open { display: flex; }
+        .chat-header { background: rgba(15, 23, 42, 0.9); padding: 10px 14px; font-weight: 800; font-size: 12px; display: flex; justify-content: space-between; color: var(--primary-neon); }
+        .chat-messages { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+        .chat-msg { max-width: 80%; padding: 6px 10px; border-radius: 10px; font-size: 11px; }
+        .chat-msg.user { background: rgba(14, 165, 233, 0.2); align-self: flex-end; color: white; }
+        .chat-msg.admin { background: rgba(255, 255, 255, 0.05); align-self: flex-start; }
+        .chat-input-area { padding: 8px; background: rgba(15, 23, 42, 0.9); display: flex; gap: 4px; }
+        .chat-input { flex: 1; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-glass); border-radius: 6px; padding: 6px; color: white; font-size: 11px; outline: none; }
+        .chat-send-btn { background: var(--primary-neon); border: none; padding: 0 10px; border-radius: 6px; font-weight: 700; color: #0f172a; cursor: pointer; font-size: 11px; }
+
+        .caller-bottom-bar { 
+            position: fixed; bottom: 0; left: 0; right: 0; 
+            background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(16px); 
+            padding: 8px 20px; z-index: 90; display: flex; align-items: center; justify-content: space-between; 
+            border-top: 1px solid var(--border-glass); 
+        }
+        .current-ball-mobile { 
+            width: 40px; height: 40px; line-height: 40px; border-radius: 50%; 
+            background: radial-gradient(circle at 30% 30%, #f43f5e, #9f1239); 
+            color: white; font-size: 14px; font-weight: 800; text-align: center; 
+        }
+        .empty-state { text-align: center; color: var(--text-muted); grid-column: 1 / -1; padding: 30px 0; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+    <div id="authOverlay">
+        <div class="auth-card" id="authStep1Card">
+            <h2>Acceso Seguro Bingo Pro</h2>
+            <p>Ingresa tu número de WhatsApp para recibir tu código de acceso</p>
+            <input type="tel" id="authPhoneInput" class="auth-input" placeholder="Ej: +584121234567">
+            <button class="btn-auth" id="sendCodeBtn" onclick="requestWhatsAppCode()">Enviar Código por WhatsApp</button>
+        </div>
+
+        <div class="auth-card" id="authStep2Card" style="display: none;">
+            <h2>Verificar Código</h2>
+            <p id="authCodeSentText">Hemos generado tu código de verificación.</p>
+            <input type="text" id="authCodeInput" class="auth-input" placeholder="Ej: 123456" maxlength="6">
+            <button class="btn-auth" onclick="verifyCodeAndLogin()">Validar y Entrar</button>
+            <button onclick="backToStep1()" style="background:transparent; border:none; color:var(--text-muted); font-size:12px; margin-top:12px; cursor:pointer;">← Cambiar número</button>
+        </div>
+    </div>
+
+    <div id="profileModal" onclick="if(event.target === this) toggleProfileModal()">
+        <div class="profile-card">
+            <h2 style="color: var(--primary-neon); font-size: 18px; margin-top:0;">Mi Perfil</h2>
+            <p style="font-size:11px; color:var(--text-muted);">Personaliza tu nombre y tu foto</p>
+            
+            <div class="avatar-upload-preview" onclick="document.getElementById('avatarFileInput').click()">
+                <img id="modalAvatarPreview" src="" alt="Avatar" style="display:none;">
+                <span id="avatarPlaceholderText" style="font-size:10px; font-weight:700; color:var(--primary-neon);">Subir Foto</span>
+            </div>
+            <input type="file" id="avatarFileInput" accept="image/*" style="display: none;" onchange="handleAvatarUpload(event)">
+
+            <input type="text" id="editNameInput" class="auth-input" placeholder="Tu Nombre">
+            <button class="btn-auth" onclick="saveProfileChanges()" style="margin-bottom: 10px;">Guardar Cambios</button>
+            <button onclick="logoutUser()" style="width: 100%; background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.4); color: #fb7185; padding: 10px; border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer;">Cerrar Sesión</button>
+        </div>
+    </div>
+
+    <div class="economy-bar">
+        <div class="badges-group">
+            <div class="diamond-badge">💎 <span id="diamondCount">100</span></div>
+            <button onclick="toggleAudio()" id="audioToggleBtn" class="audio-toggle-badge">🔊 Voz</button>
+        </div>
+        <div class="user-profile-widget" onclick="toggleProfileModal()">
+            <div class="user-avatar-container" id="navAvatarContainer">
+                <span id="navAvatarInitial">U</span>
+                <img id="navAvatarImg" src="" alt="" style="display:none;">
+            </div>
+            <div class="user-meta">
+                <span class="user-name-display" id="navUserName">Jugador</span>
+                <span class="user-email-display" id="navUserPhone">--</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="room-nav">
+        <button class="tab-btn active" id="tabGeneral" onclick="switchRoom('general')">🏪 Tienda de Cartones</button>
+        <button class="tab-btn" id="tabPrivate" onclick="switchRoom('private')">🔒 Mis Cartones</button>
+    </div>
+
+    <div id="statsBannerContainer"></div>
+
+    <div class="history-container">
+        <div class="history-header">
+            <span>HISTORIAL DE PELOTAS</span>
+            <span id="totalBallsCount">0 cantadas</span>
+        </div>
+        <div class="history-balls-scroll" id="historyBallsScroll">
+            <div style="color: var(--text-muted); font-size: 11px;">Esperando partida...</div>
+        </div>
+    </div>
+
+    <main id="app" style="width: 100%; display: flex; flex-direction: column; align-items: center;"></main>
+
+    <button class="chat-float-btn" onclick="toggleChat()">💬</button>
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <span>Soporte</span>
+            <span onclick="toggleChat()" style="cursor: pointer;">✕</span>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="chat-msg admin">¡Hola! ¿En qué podemos ayudarte?</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" class="chat-input" placeholder="Mensaje..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+            <button class="chat-send-btn" onclick="sendChatMessage()">Enviar</button>
+        </div>
+    </div>
+
+    <div class="caller-bottom-bar">
+        <div>
+            <div style="font-size: 9px; color: var(--text-muted); font-weight: 800;">ESTADO</div>
+            <div id="lastBallText" style="font-weight: 700; font-size: 11px; color: var(--primary-neon);">Esperando partida...</div>
+        </div>
+        <div class="current-ball-mobile" id="currentBallMini">--</div>
+    </div>
+
+    <script>
+        let socket = { on: function(){}, emit: function(){} };
+        if (!window.socketFailed && typeof io === 'function') { socket = io(); }
+
+        const CARD_PRICE = 10;
+        let currentRoom = 'general';
+        let userPhone = '';
+        let userName = 'Jugador';
+        let userAvatarBase64 = '';
+        let generatedSecureCode = '';
+        
+        let diamonds = 100;
+        let boughtCardsMap = {}; 
+        let globalOwnersMap = {}; // Guarda qué usuario compró qué cartón de forma global { cardNum: { name, phone } }
+        let markedCellsMap = {};
+        let drawnBalls = [];
+        let gameRound = 1;
+        let soundEnabled = true;
+
+        function saveGameState() {
+            if (!userPhone) return;
+            const userData = {
+                diamonds: diamonds,
+                boughtCards: boughtCardsMap,
+                markedCells: markedCellsMap,
+                userName: userName,
+                userAvatar: userAvatarBase64
+            };
+            localStorage.setItem(`bingo_data_${userPhone}`, JSON.stringify(userData));
+            localStorage.setItem(`bingo_global_owners_${gameRound}`, JSON.stringify(globalOwnersMap));
+            localStorage.setItem('bingo_last_phone', userPhone);
+        }
+
+        function loadGameState() {
+            const savedOwners = localStorage.getItem(`bingo_global_owners_${gameRound}`);
+            if (savedOwners) {
+                try { globalOwnersMap = JSON.parse(savedOwners); } catch(e) { globalOwnersMap = {}; }
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const lastPhone = localStorage.getItem('bingo_last_phone');
+
+            if (lastPhone) {
+                userPhone = lastPhone;
+                const savedDataJson = localStorage.getItem(`bingo_data_${userPhone}`);
+                
+                if (savedDataJson) {
+                    const data = JSON.parse(savedDataJson);
+                    diamonds = data.diamonds !== undefined ? data.diamonds : 100;
+                    boughtCardsMap = data.boughtCards || {};
+                    markedCellsMap = data.markedCells || {};
+                    userName = data.userName || `User_${userPhone.slice(-4)}`;
+                    userAvatarBase64 = data.userAvatar || '';
+                }
+                loadGameState();
+                document.getElementById('authOverlay').style.display = 'none';
+                updateProfileUI();
+                updateUI();
+            }
+        });
+
+        function logoutUser() {
+            if (confirm("¿Estás seguro de que deseas cerrar sesión? Tus datos y cartones quedarán guardados en este dispositivo.")) {
+                localStorage.removeItem('bingo_last_phone'); 
+                location.reload(); 
+            }
+        }
+
+        function requestWhatsAppCode() {
+            const phone = document.getElementById('authPhoneInput').value.trim();
+            if (!phone || phone.length < 10) {
+                alert("Por favor ingresa un número de WhatsApp válido con código de área.");
+                return;
+            }
+
+            userPhone = phone;
+            generatedSecureCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+            const message = encodeURIComponent(`🎲 Tu código de acceso seguro para Bingo Pro es: *${generatedSecureCode}*`);
+            window.open(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${message}`, '_blank');
+
+            document.getElementById('authStep1Card').style.display = 'none';
+            document.getElementById('authStep2Card').style.display = 'block';
+            document.getElementById('authCodeSentText').innerText = `Se abrió WhatsApp para enviar el código a: ${phone}`;
+        }
+
+        function backToStep1() {
+            document.getElementById('authStep2Card').style.display = 'none';
+            document.getElementById('authStep1Card').style.display = 'block';
+        }
+
+        function verifyCodeAndLogin() {
+            const enteredCode = document.getElementById('authCodeInput').value.trim();
+            if (enteredCode !== generatedSecureCode) {
+                alert("❌ Código incorrecto. Intenta nuevamente.");
+                return;
+            }
+
+            const savedDataJson = localStorage.getItem(`bingo_data_${userPhone}`);
+            if (savedDataJson) {
+                const data = JSON.parse(savedDataJson);
+                diamonds = data.diamonds !== undefined ? data.diamonds : 100;
+                boughtCardsMap = data.boughtCards || {};
+                markedCellsMap = data.markedCells || {};
+                userName = data.userName || `User_${userPhone.slice(-4)}`;
+                userAvatarBase64 = data.userAvatar || '';
+            } else {
+                userName = `User_${userPhone.slice(-4)}`;
+                diamonds = 100;
+                boughtCardsMap = {};
+                markedCellsMap = {};
+                userAvatarBase64 = '';
+            }
+            
+            loadGameState();
+            saveGameState();
+            document.getElementById('authOverlay').style.display = 'none';
+            updateProfileUI();
+            updateUI();
+        }
+
+        function toggleProfileModal() {
+            const modal = document.getElementById('profileModal');
+            const isVisible = modal.style.display === 'flex';
+            if (!isVisible) {
+                document.getElementById('editNameInput').value = userName;
+                if (userAvatarBase64) {
+                    document.getElementById('modalAvatarPreview').src = userAvatarBase64;
+                    document.getElementById('modalAvatarPreview').style.display = 'block';
+                    document.getElementById('avatarPlaceholderText').style.display = 'none';
+                }
+            }
+            modal.style.display = isVisible ? 'none' : 'flex';
+        }
+
+        function handleAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                userAvatarBase64 = e.target.result;
+                document.getElementById('modalAvatarPreview').src = userAvatarBase64;
+                document.getElementById('modalAvatarPreview').style.display = 'block';
+                document.getElementById('avatarPlaceholderText').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function saveProfileChanges() {
+            const newName = document.getElementById('editNameInput').value.trim();
+            if (newName) userName = newName;
+            saveGameState();
+            updateProfileUI();
+            toggleProfileModal();
+        }
+
+        function updateProfileUI() {
+            document.getElementById('navUserName').innerText = userName;
+            document.getElementById('navUserPhone').innerText = userPhone;
+            const initialContainer = document.getElementById('navAvatarInitial');
+            const imgContainer = document.getElementById('navAvatarImg');
+
+            if (userAvatarBase64) {
+                imgContainer.src = userAvatarBase64;
+                imgContainer.style.display = 'block';
+                initialContainer.style.display = 'none';
+            } else {
+                initialContainer.innerText = userName.charAt(0).toUpperCase();
+                initialContainer.style.display = 'block';
+                imgContainer.style.display = 'none';
+            }
+        }
+
+        function toggleAudio() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('audioToggleBtn');
+            btn.innerHTML = soundEnabled ? "🔊 Voz" : "🔇 Silencio";
+            btn.classList.toggle('muted', !soundEnabled);
+            if (!soundEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+        }
+
+        function speakBall(letter, number) {
+            if (!soundEnabled || !('speechSynthesis' in window)) return;
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(`Bola ${letter} ${number}`);
+            utterance.lang = 'es-ES';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function toggleChat() { document.getElementById('chatWindow').classList.toggle('open'); }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML += `<div class="chat-msg user">${msg}</div>`;
+            input.value = '';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            socket.emit('client_support_message', { userId: userPhone, userName, message: msg });
+        }
+
+        socket.on('server_ball_drawn', (data) => {
+            drawnBalls = data.drawnBalls;
+            if (drawnBalls.length > 0) {
+                const last = drawnBalls[drawnBalls.length - 1];
+                speakBall(getBallLetter(last), last);
+            }
+            updateUI();
+        });
+
+        socket.on('server_reset_game', (data) => {
+            drawnBalls = []; boughtCardsMap = {}; markedCellsMap = {}; globalOwnersMap = {};
+            if(data && data.gameRound) gameRound = data.gameRound;
+            localStorage.removeItem(`bingo_global_owners_${gameRound}`);
+            saveGameState();
+            updateUI();
+        });
+
+        function getBallLetter(num) { return num <= 15 ? 'B' : num <= 30 ? 'I' : num <= 45 ? 'N' : num <= 60 ? 'G' : 'O'; }
+        function getBallClass(num) { return num <= 15 ? 'ball-b' : num <= 30 ? 'ball-i' : num <= 45 ? 'ball-n' : num <= 60 ? 'ball-g' : 'ball-o'; }
+
+        function updateUI() {
+            document.getElementById('diamondCount').innerText = diamonds;
+            if (drawnBalls.length > 0) {
+                const last = drawnBalls[drawnBalls.length - 1];
+                document.getElementById('currentBallMini').innerText = `${getBallLetter(last)}-${last}`;
+                document.getElementById('lastBallText').innerText = `En juego (${drawnBalls.length} bolas)`;
+            } else {
+                document.getElementById('currentBallMini').innerText = '--';
+                document.getElementById('lastBallText').innerText = `Esperando...`;
+            }
+
+            const historyScroll = document.getElementById('historyBallsScroll');
+            document.getElementById('totalBallsCount').innerText = `${drawnBalls.length} cantadas`;
+            historyScroll.innerHTML = '';
+
+            if (drawnBalls.length === 0) {
+                historyScroll.innerHTML = `<div style="color: var(--text-muted); font-size: 11px;">Sin pelotas aún...</div>`;
+            } else {
+                [...drawnBalls].reverse().forEach((ballNum, index) => {
+                    const ballDiv = document.createElement('div');
+                    ballDiv.className = `history-ball-item ${getBallClass(ballNum)}`;
+                    if (index === 0) ballDiv.classList.add('latest');
+                    ballDiv.innerText = `${getBallLetter(ballNum)}${ballNum}`;
+                    historyScroll.appendChild(ballDiv);
+                });
+            }
+            renderStatsBanner();
+            renderCards();
+        }
+
+        function switchRoom(room) {
+            currentRoom = room;
+            document.getElementById('tabGeneral').classList.toggle('active', room === 'general');
+            document.getElementById('tabPrivate').classList.toggle('active', room === 'private');
+            updateUI();
+        }
+
+        function getSeededNumbers(min, max, count, seed) {
+            let numbers = [], currentSeed = seed;
+            while (numbers.length < count) {
+                let x = Math.sin(currentSeed++) * 10000;
+                let randomNum = Math.floor((x - Math.floor(x)) * (max - min + 1)) + min;
+                if (!numbers.includes(randomNum)) numbers.push(randomNum);
+            }
+            return numbers;
+        }
+
+        function getCardMatrix(cardNumber) {
+            const baseSeed = (cardNumber * 1000) + (gameRound * 100);
+            const colB = getSeededNumbers(1, 15, 5, baseSeed + 1);
+            const colI = getSeededNumbers(16, 30, 5, baseSeed + 2);
+            const colN = getSeededNumbers(31, 45, 4, baseSeed + 3);
+            const colG = getSeededNumbers(46, 60, 5, baseSeed + 4);
+            const colO = getSeededNumbers(61, 75, 5, baseSeed + 5);
+
+            let matrix = [];
+            for (let r = 0; r < 5; r++) {
+                let row = [];
+                row.push(colB[r]); row.push(colI[r]);
+                row.push(r === 2 ? 0 : colN[r < 2 ? r : r - 1]);
+                row.push(colG[r]); row.push(colO[r]);
+                matrix.push(row);
+            }
+            return matrix;
+        }
+
+        function buyCard(cardNumber) {
+            if (drawnBalls.length > 0) { alert("Partida iniciada. No se puede comprar."); return; }
+            if (diamonds < CARD_PRICE) { alert("Diamantes insuficientes."); return; }
+            
+            if (globalOwnersMap[cardNumber]) {
+                alert("Este cartón ya ha sido comprado por otro jugador.");
+                return;
+            }
+
+            diamonds -= CARD_PRICE;
+            boughtCardsMap[cardNumber] = true; 
+            globalOwnersMap[cardNumber] = { name: userName, phone: userPhone };
+
+            saveGameState();
+            updateUI();
+        }
+
+        function toggleCellMark(cardNumber, row, col) {
+            const key = `${cardNumber}_${row}_${col}`;
+            if (markedCellsMap[key]) delete markedCellsMap[key];
+            else markedCellsMap[key] = true;
+            saveGameState();
+            updateUI();
+        }
+
+        function checkBingo(cardNumber) {
+            let hasWon = false;
+            for (let r = 0; r < 5; r++) {
+                if ([0,1,2,3,4].every(c => (r===2 && c===2) || markedCellsMap[`${cardNumber}_${r}_${c}`])) hasWon = true;
+            }
+            for (let c = 0; c < 5; c++) {
+                if ([0,1,2,3,4].every(r => (r===2 && c===2) || markedCellsMap[`${cardNumber}_${r}_${c}`])) hasWon = true;
+            }
+            if (hasWon) {
+                socket.emit('player_claim_bingo', { cardNumber, userId: userPhone, userName, gameRound });
+                alert(`🎉 ¡BINGO CANTADO! ¡Felicidades ${userName}!`);
+            } else {
+                alert("⚠️ Aún falta para completar línea en este cartón.");
+            }
+        }
+
+        function renderStatsBanner() {
+            const container = document.getElementById('statsBannerContainer');
+            let soldCount = Object.keys(globalOwnersMap).length;
+            let totalCards = 10;
+            let availableCount = totalCards - soldCount;
+
+            container.innerHTML = `
+                <div class="stats-banner">
+                    <div class="stat-item">Vendidos: <span>${soldCount}</span></div>
+                    <div class="stat-item">Disponibles: <span>${availableCount}</span></div>
+                    <div class="stat-item">Total Cartones: <span>${totalCards}</span></div>
+                </div>
+            `;
+        }
+
+        function renderCards() {
+            const app = document.getElementById('app');
+            app.innerHTML = '';
+            const container = document.createElement('div');
+            container.classList.add('cards-container');
+            
+            let visibleCount = 0;
+            const totalCards = 10;
+
+            for (let i = 1; i <= totalCards; i++) {
+                const ownerInfo = globalOwnersMap[i];
+                const isOwner = !!boughtCardsMap[i] || (ownerInfo && ownerInfo.phone === userPhone);
+
+                if (currentRoom === 'private' && !isOwner) continue;
+
+                visibleCount++;
+                const cardDiv = document.createElement('div');
+                cardDiv.classList.add('bingo-card');
+
+                let statusText = 'Disponible';
+                let statusColor = '#38bdf8';
+                
+                if (ownerInfo) {
+                    if (ownerInfo.phone === userPhone) {
+                        statusText = '✓ Comprado por ti';
+                        statusColor = '#10b981';
+                    } else {
+                        statusText = `Vendido a: ${ownerInfo.name}`;
+                        statusColor = '#f43f5e';
+                    }
+                }
+
+                cardDiv.innerHTML = `
+                    <div class="bingo-card-header">
+                        <span style="font-weight: 800; color: #38bdf8;">Cartón #${i}</span>
+                        <span style="color: ${statusColor}; font-weight: 700;">${statusText}</span>
+                    </div>
+                `;
+
+                const header = document.createElement('div');
+                header.classList.add('bingo-header');
+                ['B', 'I', 'N', 'G', 'O'].forEach(l => header.innerHTML += `<div class="header-cell">${l}</div>`);
+                cardDiv.appendChild(header);
+
+                const matrix = getCardMatrix(i);
+                const grid = document.createElement('div');
+                grid.classList.add('bingo-grid');
+
+                for (let r = 0; r < 5; r++) {
+                    for (let c = 0; c < 5; c++) {
+                        const cell = document.createElement('div');
+                        cell.classList.add('cell');
+                        if (r === 2 && c === 2) {
+                            cell.innerText = 'FREE';
+                            cell.classList.add('free', 'marked');
+                        } else {
+                            cell.innerText = matrix[r][c];
+                            if (currentRoom === 'private' && isOwner && markedCellsMap[`${i}_${r}_${c}`]) {
+                                cell.classList.add('marked');
+                            }
+                            if (currentRoom === 'private' && isOwner) {
+                                cell.onclick = () => toggleCellMark(i, r, c);
+                            }
+                        }
+                        grid.appendChild(cell);
+                    }
+                }
+                cardDiv.appendChild(grid);
+
+                if (currentRoom === 'general') {
+                    const btnAction = document.createElement('button');
+                    btnAction.classList.add('btn-buy');
+                    if (!ownerInfo) {
+                        btnAction.disabled = drawnBalls.length > 0;
+                        btnAction.innerText = drawnBalls.length > 0 ? 'Cerrado' : `Comprar (💎${CARD_PRICE})`;
+                        btnAction.onclick = () => buyCard(i);
+                    } else if (ownerInfo.phone === userPhone) {
+                        btnAction.disabled = true;
+                        btnAction.style.background = '#065f46';
+                        btnAction.innerText = 'Tuyo (Ver en Mis Cartones)';
+                    } else {
+                        btnAction.disabled = true;
+                        btnAction.style.background = '#334155';
+                        btnAction.style.color = '#94a3b8';
+                        btnAction.innerText = 'No disponible';
+                    }
+                    cardDiv.appendChild(btnAction);
+                } else if (currentRoom === 'private' && isOwner) {
+                    const btnBingo = document.createElement('button');
+                    btnBingo.classList.add('btn-bingo');
+                    btnBingo.innerText = '📢 ¡Bingo!';
+                    btnBingo.onclick = () => checkBingo(i);
+                    cardDiv.appendChild(btnBingo);
+                }
+                container.appendChild(cardDiv);
+            }
+
+            if (visibleCount === 0) {
+                container.innerHTML = `<div class="empty-state">${currentRoom === 'general' ? 'No hay cartones registrados.' : 'No tienes cartones comprados. Ve a la Tienda de Cartones para adquirir los tuyos.'}</div>`;
+            }
+            app.appendChild(container);
+        }
+    </script>
+</body>
+</html>
